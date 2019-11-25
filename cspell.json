@@ -1,0 +1,6 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
+  "version": "0.1",
+  "import": ["./node_modules/@loomble/cspell-dictionary/cspell.json"],
+  "words": ["dependabot", "repos"]
+}

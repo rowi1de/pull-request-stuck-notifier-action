@@ -1,0 +1,4 @@
+{
+  "$schema": "https://packlint.org/schema.json",
+  "extends": ["packlint:strict"]
+}

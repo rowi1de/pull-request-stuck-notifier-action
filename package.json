@@ -1,0 +1,60 @@
+{
+  "private": true,
+  "name": "pull-request-stuck-notifier-action",
+  "description": "Automatically label and mention/notify a user about stuck pull requests.",
+  "license": "MIT",
+  "author": {
+    "name": "Jay Rylan",
+    "url": "http://jayrylan.com/"
+  },
+  "homepage": "https://github.com/loomble/pull-request-stuck-notifier-action#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loomble/pull-request-stuck-notifier-action.git"
+  },
+  "bugs": {
+    "url": "https://github.com/loomble/pull-request-stuck-notifier-action/issues"
+  },
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "files": [
+    "dist/index.js"
+  ],
+  "scripts": {
+    "build": "ncc build src/action.ts"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@actions/core": "^1.2.0",
+    "@actions/github": "^1.1.0",
+    "js-yaml": "^3.13.1",
+    "ms": "^2.1.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^8.2.0",
+    "@commitlint/config-conventional": "^8.2.0",
+    "@commitlint/prompt-cli": "^8.2.0",
+    "@loomble/cspell-dictionary": "1.0.2",
+    "@types/js-yaml": "^3.12.1",
+    "@types/ms": "^0.7.31",
+    "@types/node": "12.12.12",
+    "@zeit/ncc": "^0.20.5",
+    "cspell": "4.0.35",
+    "husky": "^3.0.9",
+    "packlint": "^1.0.3",
+    "prettier": "^1.19.1",
+    "prettier-config-slick": "^1.0.0",
+    "typescript": ">=3.7.2"
+  },
+  "keywords": [
+    "action",
+    "notifier",
+    "pr",
+    "pull request",
+    "stuck"
+  ],
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}
