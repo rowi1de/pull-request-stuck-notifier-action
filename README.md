@@ -10,6 +10,8 @@ and have configured their pull requests to be merged automatically. This action
 will catch unmerged PRs that may be stuck because of a failing GitHub status
 check.
 
+This action pairs very well with the [Auto Approve action by Harry Marr][auto-approve].
+
 ## Usage instructions
 
 ### 1. Create a label in your repo to assign to stuck pull requests
@@ -74,6 +76,9 @@ jobs:
           search-params: 'author:app/dependabot-preview author:app/dependabot'
 ```
 
+## Related
+- [Auto Approve action by Harry Marr][auto-approve]
+
 ## Sponsors
 
 - [Loomble](https://loomble.com/)
@@ -86,6 +91,7 @@ jobs:
 
 [MIT](https://github.com/loomble/pull-request-stuck-notifier-action/blob/master/LICENSE)
 
+[auto-approve]: https://github.com/marketplace/actions/auto-approve
 [dependabot]: https://dependabot.com/
 [greenkeeper]: https://github.com/marketplace/greenkeeper
 [renovate]: https://github.com/marketplace/renovate
