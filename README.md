@@ -12,53 +12,29 @@ check.
 
 This action pairs very well with the [Auto Approve action by Harry Marr][auto-approve].
 
-## Usage instructions
+## Usage
 
-### 1. Create a label in your repo to assign to stuck pull requests
+### Pre-requisites
 
-The default label this action uses is "stuck", but you can use any label. The
-label must be setup before using this action.
+Create a label in your repo to assign to stuck pull requests.
 
-### 2. Create an action workflow
+The default label this action uses is "stuck", but you can use any label.
 
-Input properties:
+**!!! The label must be setup before using this action. !!!**
 
-### repo-token
+### Inputs
 
-Input for `secrets.GITHUB_TOKEN`.
+| Input           | Required | Default | Description                                                                                                                                       |
+| --------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repo-token`    | Required |         | Input for `secrets.GITHUB_TOKEN`.                                                                                                                 |
+| `cutoff`        |          | 24h     | The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms](https://www.npmjs.com/package/ms) package. |
+| `label`         |          | stuck   | Name of the label to assign to stuck pull requests. The supplied label must already exist, this action will not create a new label.               |
+| `message`       | Required |         | The message to post on the pull request to notify a user. Comments are posted by the `github-actions` app.                                        |
+| `search-params` | Required |         | Search parameters to pass to the pull request search.                                                                                             |
 
-#### cutoff
+### Example workflow
 
-The cutoff time period before a pull request is considered stuck. The value
-will be passed to the [ms](https://www.npmjs.com/package/ms) package.
-
-Default is "24h".
-
-#### label
-
-Name of the label to assign to stuck pull requests. The supplied label must
-already exist, this action will not create a new label.
-
-Default is "stuck".
-
-#### message
-
-The message to post on the pull request to notify a user.
-
-Comments are posted by the `github-actions` app.
-
-Default: _No default, you must provide a value_.
-
-#### search-params
-
-Search parameters to pass to the pull request search.
-
-Default: _No default, you must provide a value_.
-
-## Sample workflow
-
-This sample workflow will find and update [Dependabot][dependabot] pull requests
-that have not been automatically merged in 24 hours (default cutoff).
+Find and update [Dependabot][dependabot] pull requests that have not been automatically merged in 24 hours (default cutoff).
 
 ```yaml
 name: Stuck PRs
@@ -77,6 +53,7 @@ jobs:
 ```
 
 ## Related
+
 - [Auto Approve action by Harry Marr][auto-approve]
 
 ## Sponsors
