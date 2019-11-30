@@ -7972,16 +7972,16 @@ exports.updatePullRequests = (context, pullRequests) => __awaiter(void 0, void 0
           __typename
         }
       }
-      addComment_${i}: addComment(input:{subjectId: "${pr.id}", body:"${config.message}"}) {
+      addComment_${i}: addComment(input:{subjectId: "${pr.id}", body: $body}) {
         subject {
           id
         }
       }
     `);
-    const query = `mutation UpdatePRs {\n${mutations.join('\n')}\n}`;
+    const query = `mutation UpdatePRs($body: String!) {\n${mutations.join('\n')}\n}`;
     core.debug(`Sending UpdatePRs mutation request:\n${query}`);
     core.debug('UpdatePRs mutation sent');
-    yield client.graphql(query);
+    yield client.graphql(query, { body: config.message });
 });
 
 
