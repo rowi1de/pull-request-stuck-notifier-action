@@ -38,7 +38,13 @@ export const updatePullRequests = async (
     )
   ]
 
-  const query = `mutation UpdatePRs($commentBody: String!) {\n${mutations.join(
+  const queryArgs: string[] = []
+  if (stuckPRs.pullRequests.length > 0) {
+    queryArgs.push('$commentBody: String!')
+  }
+
+  const queryArgsStr = queryArgs.length > 0 ? `(${queryArgs.join(', ')})` : ''
+  const query = `mutation UpdatePRs${queryArgsStr} {\n${mutations.join(
     '\n'
   )}\n}`
   core.debug(`Sending UpdatePRs mutation request:\n${query}`)
