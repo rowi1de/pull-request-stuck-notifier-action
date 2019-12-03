@@ -6,11 +6,13 @@ Automatically label and mention/notify a user about stuck pull requests.
 
 This is primarily useful if you use a dependency update bot such as
 [Dependabot][dependabot], [Greenkeeper][greenkeeper], or [Renovate][renovate]
-and have configured their pull requests to be merged automatically. This action
-will catch unmerged PRs that may be stuck because of a failing GitHub status
-check.
+and have configured their pull requests to be merged automatically. 
 
-This action pairs very well with the [Auto Approve action by Harry Marr][auto-approve].
+This action will catch unmerged PRs that may be stuck because of a failing 
+GitHub status check, and will automatically remove the stuck label from 
+all closed or merged pull requests.
+
+Pairs very well with the [Auto Approve action by Harry Marr][auto-approve].
 
 ## Usage
 
