@@ -52,7 +52,10 @@ The default label this action uses is "stuck", but you can use any label.
       <td>&nbsp;</td>
       <td>label</td>
       <td>stuck</td>
-      <td>Name of the label to assign to stuck pull requests. <strong>The supplied label must already exist. This action will not create a new label.</strong></td>
+      <td>
+        Name of the label to assign to stuck pull requests.<br />
+        <strong>The supplied label must already exist. This action will not create a new label.</strong>
+      </td>
     </tr>
     <tr>
       <td>:heavy_exclamation_mark:</td>
@@ -64,7 +67,11 @@ The default label this action uses is "stuck", but you can use any label.
       <td>:heavy_exclamation_mark:</td>
       <td>search-query</td>
       <td>&nbsp;</td>
-      <td>Search query to pass to the pull request search.</td>
+      <td>
+        Search query to pass to the pull request search.<br/>
+        The value provided will be appended to the base search query, which looks something like this:<br />
+        "repo:${GITHUB_REPOSITORY} is:pr is:open created:<=${createdSinceSuteOff} -label:${stuckLabel}"
+      </td>
     </tr>
   </tbody>
 </table>
