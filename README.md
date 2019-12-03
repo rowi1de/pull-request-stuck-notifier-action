@@ -26,13 +26,48 @@ The default label this action uses is "stuck", but you can use any label.
 
 :heavy_exclamation_mark: = Required
 
-| Input                                   | Default | Description                                                                                                                                       |
-| --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `repo-token` :heavy_exclamation_mark:   |         | Input for `secrets.GITHUB_TOKEN`.                                                                                                                 |
-| `cutoff`                                | 24h     | The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms](https://www.npmjs.com/package/ms) package. |
-| `label`                                 | stuck   | Name of the label to assign to stuck pull requests. **The supplied label must already exist, this action will not create a new label.**           |
-| `message` :heavy_exclamation_mark:      |         | The comment message to post on the pull request to notify a user. Comments are posted by the `github-actions` app.                                |
-| `search-query` :heavy_exclamation_mark: |         | Search query to pass to the pull request search.                                                                                                  |
+<table>
+  <thead>
+    <tr>
+      <th width="1%">&nbsp;</th>
+      <th width="20%">Input</th>
+      <th width="10%">Default</th>
+      <th width="69%">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>:heavy_exclamation_mark:</td>
+      <td>`repo-token`</td>
+      <td>&nbsp;</td>
+      <td>Input for `secrets.GITHUB_TOKEN`.</td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>`cutoff`</td>
+      <td>24h</td>
+      <td>The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms][ms] package.</td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>`label`</td>
+      <td>stuck</td>
+      <td>Name of the label to assign to stuck pull requests. **The supplied label must already exist. This action cannot will not create a new label.**</td>
+    </tr>
+    <tr>
+      <td>:heavy_exclamation_mark:</td>
+      <td>`message`</td>
+      <td>&nbsp;</td>
+      <td>The comment message to post on the pull request to notify a user.</td>
+    </tr>
+    <tr>
+      <td>:heavy_exclamation_mark:</td>
+      <td>`search-query`</td>
+      <td>&nbsp;</td>
+      <td>Search query to pass to the pull request search.</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Example workflow
 
