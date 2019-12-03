@@ -46,7 +46,7 @@ The default label this action uses is "stuck", but you can use any label.
       <td>&nbsp;</td>
       <td>cutoff</td>
       <td>24h</td>
-      <td>The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms][ms] package.</td>
+      <td>The cutoff time period before a pull request is considered stuck. The value will be passed to the <a href="https://www.npmjs.com/package/ms">ms</a> package.</td>
     </tr>
     <tr>
       <td>&nbsp;</td>
