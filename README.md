@@ -38,31 +38,31 @@ The default label this action uses is "stuck", but you can use any label.
   <tbody>
     <tr>
       <td>:heavy_exclamation_mark:</td>
-      <td>`repo-token`</td>
+      <td>repo-token</td>
       <td>&nbsp;</td>
       <td>Input for `secrets.GITHUB_TOKEN`.</td>
     </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>`cutoff`</td>
+      <td>cutoff</td>
       <td>24h</td>
       <td>The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms][ms] package.</td>
     </tr>
     <tr>
       <td>&nbsp;</td>
-      <td>`label`</td>
+      <td>label</td>
       <td>stuck</td>
       <td>Name of the label to assign to stuck pull requests. <strong>The supplied label must already exist. This action will not create a new label.</strong></td>
     </tr>
     <tr>
       <td>:heavy_exclamation_mark:</td>
-      <td>`message`</td>
+      <td>message</td>
       <td>&nbsp;</td>
       <td>The comment message to post on the pull request to notify a user.</td>
     </tr>
     <tr>
       <td>:heavy_exclamation_mark:</td>
-      <td>`search-query`</td>
+      <td>search-query</td>
       <td>&nbsp;</td>
       <td>Search query to pass to the pull request search.</td>
     </tr>
