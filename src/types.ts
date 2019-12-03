@@ -4,12 +4,28 @@ export interface Config {
   cutoff: string
   label: string
   message: string
-  'search-params': string
+  search: string
 }
 
 export interface PullRequestInfo {
   id: string
   permalink: string
+}
+
+export interface InfoQueryResult {
+  repo: {
+    label: {
+      id: string
+    }
+  }
+  stuckPRs: {
+    totalCount: number
+    pullRequests: PullRequestInfo[]
+  }
+  previouslyStuckPRs: {
+    totalCount: number
+    pullRequests: PullRequestInfo[]
+  }
 }
 
 export interface Context {

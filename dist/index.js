@@ -7963,25 +7963,35 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // spell-checker:ignore labelable
 const core = __importStar(__webpack_require__(470));
-exports.updatePullRequests = (context, pullRequests) => __awaiter(void 0, void 0, void 0, function* () {
+exports.updatePullRequests = (context, data) => __awaiter(void 0, void 0, void 0, function* () {
     const { client, config, labelId } = context;
+    const { stuckPRs, previouslyStuckPRs } = data;
     core.debug('Generating UpdatePRs mutation');
-    const mutations = pullRequests.map((pr, i) => `
+    const mutations = [
+        ...stuckPRs.pullRequests.map((pr, i) => `
       labelPr_${i}: addLabelsToLabelable(input:{labelableId:"${pr.id}", labelIds:["${labelId}"]}) {
         labelable {
           __typename
         }
       }
-      addComment_${i}: addComment(input:{subjectId: "${pr.id}", body: $body}) {
+      addComment_${i}: addComment(input:{subjectId: "${pr.id}", body: $commentBody}) {
         subject {
           id
         }
       }
-    `);
-    const query = `mutation UpdatePRs($body: String!) {\n${mutations.join('\n')}\n}`;
+    `),
+        ...previouslyStuckPRs.pullRequests.map((pr, i) => `
+      removeLabelPr_${i}: removeLabelsFromLabelable(input:{labelableId:"${pr.id}", labelIds:["${labelId}"]}) {
+        labelable {
+          __typename
+        }
+      }
+    `)
+    ];
+    const query = `mutation UpdatePRs($commentBody: String!) {\n${mutations.join('\n')}\n}`;
     core.debug(`Sending UpdatePRs mutation request:\n${query}`);
     core.debug('UpdatePRs mutation sent');
-    yield client.graphql(query, { body: config.message });
+    yield client.graphql(query, { commentBody: config.message });
 });
 
 
@@ -14112,6 +14122,8 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const ms_1 = __importDefault(__webpack_require__(317));
 const updatePullRequests_1 = __webpack_require__(459);
+const getInput_1 = __webpack_require__(976);
+const { debug } = core;
 const timeNum = (num) => num.toString().padStart(2, '0');
 const generateCutoffDateString = (cutoff) => {
     const d = new Date(Date.now() - cutoff);
@@ -14123,21 +14135,20 @@ const generateCutoffDateString = (cutoff) => {
     return `${year}-${month}-${day}T${hours}:${mins}:00+00:00`;
 };
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
     try {
-        const client = new github.GitHub(core.getInput('repo-token', { required: true }));
+        const client = new github.GitHub(getInput_1.getInput('repo-token', { required: true }));
         const { GITHUB_REPOSITORY = '' } = process.env;
         const [repoOwner, repoName] = GITHUB_REPOSITORY.split('/');
-        const inputCutoff = core.getInput('cutoff');
-        const inputLabel = core.getInput('label');
         const config = {
-            cutoff: inputCutoff !== '' ? inputCutoff : '24h',
-            label: inputLabel !== '' ? inputLabel : 'stuck',
-            message: core.getInput('message', { required: true }),
-            'search-params': core.getInput('search-params', { required: true })
+            cutoff: (_a = getInput_1.getInput('cutoff'), (_a !== null && _a !== void 0 ? _a : '24h')),
+            label: (_b = getInput_1.getInput('label'), (_b !== null && _b !== void 0 ? _b : 'stuck')),
+            message: getInput_1.getInput('message', { required: true }),
+            search: (_c = getInput_1.getInput('search-params'), (_c !== null && _c !== void 0 ? _c : getInput_1.getInput('search-query', { required: true })))
         };
         const stuckLabel = config.label;
         const stuckCutoff = ms_1.default(config.cutoff);
-        const stuckSearch = config['search-params'];
+        const stuckSearch = config['search'];
         const createdSince = generateCutoffDateString(stuckCutoff);
         const query = `
       {
@@ -14146,7 +14157,16 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             id
           }
         }
-        stuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr ${stuckSearch} is:open created:<=${createdSince} -label:${stuckLabel}", type: ISSUE, first: 10) {
+        stuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr ${stuckSearch} is:open created:<=${createdSince} -label:${stuckLabel}", type: ISSUE, first: 100) {
+          totalCount: issueCount
+          pullRequests: nodes {
+            ... on PullRequest {
+              id
+              permalink
+            }
+          }
+        }
+        previouslyStuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr is:closed label:${stuckLabel}", type: ISSUE, first: 100) {
           totalCount: issueCount
           pullRequests: nodes {
             ... on PullRequest {
@@ -14157,20 +14177,27 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         }
       }
     `;
-        core.debug(`Searching for stuck PRs using query:\n${query}`);
+        debug(`Searching for stuck PRs using query:\n${query}`);
         const data = yield client.graphql(query);
-        if (data.stuckPRs.totalCount === 0) {
-            core.debug('There are currently no stuck PRs.');
+        if (data.stuckPRs.totalCount === 0 &&
+            data.previouslyStuckPRs.totalCount === 0) {
+            debug('No stuck PRs found.');
             return;
         }
-        const total = data.stuckPRs.totalCount;
-        core.debug(`Found ${total === 1 ? 'stuck PR' : 'stuck PRs'}.`);
+        {
+            const total = data.stuckPRs.totalCount;
+            debug(`Found ${total.toLocaleString('en')} currently stuck ${total === 1 ? 'PR' : 'PRs'}.`);
+        }
+        {
+            const total = data.previouslyStuckPRs.totalCount;
+            debug(`Found ${total.toLocaleString('en')} previously stuck ${total === 1 ? 'PR' : 'PRs'}.`);
+        }
         const context = {
             client,
             config,
             labelId: data.repo.label.id
         };
-        yield updatePullRequests_1.updatePullRequests(context, data.stuckPRs.pullRequests);
+        yield updatePullRequests_1.updatePullRequests(context, data);
     }
     catch (err) {
         core.setFailed(err);
@@ -14285,6 +14312,29 @@ function onceStrict (fn) {
   f.called = false
   return f
 }
+
+
+/***/ }),
+
+/***/ 976:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+function getInput(key, options) {
+    const value = core.getInput(key, options);
+    return value !== '' ? value : undefined;
+}
+exports.getInput = getInput;
 
 
 /***/ }),

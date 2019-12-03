@@ -24,13 +24,15 @@ The default label this action uses is "stuck", but you can use any label.
 
 ### Inputs
 
-| Input           | Required | Default | Description                                                                                                                                       |
-| --------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `repo-token`    | Required |         | Input for `secrets.GITHUB_TOKEN`.                                                                                                                 |
-| `cutoff`        |          | 24h     | The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms](https://www.npmjs.com/package/ms) package. |
-| `label`         |          | stuck   | Name of the label to assign to stuck pull requests. The supplied label must already exist, this action will not create a new label.               |
-| `message`       | Required |         | The message to post on the pull request to notify a user. Comments are posted by the `github-actions` app.                                        |
-| `search-params` | Required |         | Search parameters to pass to the pull request search.                                                                                             |
+:heavy_exclamation_mark: = Required
+
+| Input                                   | Default | Description                                                                                                                                       |
+| --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repo-token` :heavy_exclamation_mark:   |         | Input for `secrets.GITHUB_TOKEN`.                                                                                                                 |
+| `cutoff`                                | 24h     | The cutoff time period before a pull request is considered stuck. The value will be passed to the [ms](https://www.npmjs.com/package/ms) package. |
+| `label`                                 | stuck   | Name of the label to assign to stuck pull requests. **The supplied label must already exist, this action will not create a new label.**           |
+| `message` :heavy_exclamation_mark:      |         | The comment message to post on the pull request to notify a user. Comments are posted by the `github-actions` app.                                |
+| `search-query` :heavy_exclamation_mark: |         | Search query to pass to the pull request search.                                                                                                  |
 
 ### Example workflow
 
@@ -49,7 +51,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           message: 'Hey @yourUsername, this PR appears to be stuck.'
-          search-params: 'author:app/dependabot-preview author:app/dependabot'
+          search-query: 'author:app/dependabot-preview author:app/dependabot'
 ```
 
 ## Related

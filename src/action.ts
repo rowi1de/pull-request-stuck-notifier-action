@@ -2,8 +2,11 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import ms from 'ms'
 
-import { PullRequestInfo, Context, Config } from './types'
+import { Config, Context, InfoQueryResult } from './types'
 import { updatePullRequests } from './updatePullRequests'
+import { getInput } from './utils/getInput'
+
+const { debug } = core
 
 const timeNum = (num: number) => num.toString().padStart(2, '0')
 
@@ -20,23 +23,21 @@ const generateCutoffDateString = (cutoff: number): string => {
 
 const run = async () => {
   try {
-    const client = new github.GitHub(
-      core.getInput('repo-token', { required: true })
-    )
+    const client = new github.GitHub(getInput('repo-token', { required: true }))
     const { GITHUB_REPOSITORY = '' } = process.env
     const [repoOwner, repoName] = GITHUB_REPOSITORY.split('/')
-    const inputCutoff = core.getInput('cutoff')
-    const inputLabel = core.getInput('label')
     const config: Config = {
-      cutoff: inputCutoff !== '' ? inputCutoff : '24h',
-      label: inputLabel !== '' ? inputLabel : 'stuck',
-      message: core.getInput('message', { required: true }),
-      'search-params': core.getInput('search-params', { required: true })
+      cutoff: getInput('cutoff') ?? '24h',
+      label: getInput('label') ?? 'stuck',
+      message: getInput('message', { required: true }),
+      search:
+        getInput('search-params') ??
+        getInput('search-query', { required: true })
     }
 
     const stuckLabel = config.label
     const stuckCutoff = ms(config.cutoff)
-    const stuckSearch = config['search-params']
+    const stuckSearch = config['search']
     const createdSince = generateCutoffDateString(stuckCutoff)
     const query = `
       {
@@ -45,7 +46,16 @@ const run = async () => {
             id
           }
         }
-        stuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr ${stuckSearch} is:open created:<=${createdSince} -label:${stuckLabel}", type: ISSUE, first: 10) {
+        stuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr ${stuckSearch} is:open created:<=${createdSince} -label:${stuckLabel}", type: ISSUE, first: 100) {
+          totalCount: issueCount
+          pullRequests: nodes {
+            ... on PullRequest {
+              id
+              permalink
+            }
+          }
+        }
+        previouslyStuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr is:closed label:${stuckLabel}", type: ISSUE, first: 100) {
           totalCount: issueCount
           pullRequests: nodes {
             ... on PullRequest {
@@ -57,27 +67,34 @@ const run = async () => {
       }
     `
 
-    core.debug(`Searching for stuck PRs using query:\n${query}`)
+    debug(`Searching for stuck PRs using query:\n${query}`)
 
-    const data: {
-      repo: {
-        label: {
-          id: string
-        }
-      }
-      stuckPRs: {
-        totalCount: number
-        pullRequests: PullRequestInfo[]
-      }
-    } = await client.graphql(query)
+    const data: InfoQueryResult = await client.graphql(query)
 
-    if (data.stuckPRs.totalCount === 0) {
-      core.debug('There are currently no stuck PRs.')
+    if (
+      data.stuckPRs.totalCount === 0 &&
+      data.previouslyStuckPRs.totalCount === 0
+    ) {
+      debug('No stuck PRs found.')
       return
     }
 
-    const total = data.stuckPRs.totalCount
-    core.debug(`Found ${total === 1 ? 'stuck PR' : 'stuck PRs'}.`)
+    {
+      const total = data.stuckPRs.totalCount
+      debug(
+        `Found ${total.toLocaleString('en')} currently stuck ${
+          total === 1 ? 'PR' : 'PRs'
+        }.`
+      )
+    }
+    {
+      const total = data.previouslyStuckPRs.totalCount
+      debug(
+        `Found ${total.toLocaleString('en')} previously stuck ${
+          total === 1 ? 'PR' : 'PRs'
+        }.`
+      )
+    }
 
     const context: Context = {
       client,
@@ -85,7 +102,7 @@ const run = async () => {
       labelId: data.repo.label.id
     }
 
-    await updatePullRequests(context, data.stuckPRs.pullRequests)
+    await updatePullRequests(context, data)
   } catch (err) {
     core.setFailed(err)
   }
