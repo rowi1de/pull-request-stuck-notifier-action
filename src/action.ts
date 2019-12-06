@@ -21,11 +21,13 @@ const generateCutoffDateString = (cutoff: number): string => {
   return `${year}-${month}-${day}T${hours}:${mins}:00+00:00`
 }
 
+const escapeStr = (str: string): string => JSON.stringify(str).slice(1, -1)
+
 const run = async () => {
   try {
     const client = new github.GitHub(getInput('repo-token', { required: true }))
-    const { GITHUB_REPOSITORY = '' } = process.env
-    const [repoOwner, repoName] = GITHUB_REPOSITORY.split('/')
+    const repo = process.env.GITHUB_REPOSITORY ?? ''
+    const [repoOwner, repoName] = repo.split('/')
     const config: Config = {
       cutoff: getInput('cutoff') ?? '24h',
       label: getInput('label') ?? 'stuck',
@@ -39,14 +41,27 @@ const run = async () => {
     const stuckCutoff = ms(config.cutoff)
     const stuckSearch = config['search']
     const createdSince = generateCutoffDateString(stuckCutoff)
+
+    const queryVarArgs: string = Object.entries({
+      repoOwner: 'String!',
+      repoName: 'String!',
+      stuckLabel: 'String!',
+      stuckPRsQuery: 'String!',
+      prevStuckPRsQuery: 'String!'
+    })
+      .map(([key, value]) => `$${key}: ${value}`)
+      .join(', ')
+
+    const prNodeArgs = 'type: ISSUE, first: 100'
+
     const query = `
-      {
-        repo: repository(owner:"${repoOwner}", name:"${repoName}") {
-          label(name:"${stuckLabel}") {
+      query GetStuckPRs(${queryVarArgs}) {
+        repo: repository(owner: $repoOwner, name: $repoName) {
+          label(name: $stuckLabel) {
             id
           }
         }
-        stuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr ${stuckSearch} is:open created:<=${createdSince} -label:${stuckLabel}", type: ISSUE, first: 100) {
+        stuckPRs: search(query: $stuckPRsQuery, ${prNodeArgs}) {
           totalCount: issueCount
           pullRequests: nodes {
             ... on PullRequest {
@@ -55,7 +70,7 @@ const run = async () => {
             }
           }
         }
-        previouslyStuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr is:closed label:${stuckLabel}", type: ISSUE, first: 100) {
+        prevStuckPRs: search(query: $prevStuckPRsQuery, ${prNodeArgs}) {
           totalCount: issueCount
           pullRequests: nodes {
             ... on PullRequest {
@@ -67,14 +82,26 @@ const run = async () => {
       }
     `
 
-    debug(`Searching for stuck PRs using query:\n${query}`)
+    const stuckPRsQuery = `repo:${escapeStr(repo)} is:pr ${escapeStr(
+      stuckSearch
+    )} is:open created:<=${createdSince} -label:${JSON.stringify(stuckLabel)}`
 
-    const data: InfoQueryResult = await client.graphql(query)
+    const prevStuckPRsQuery = `repo:${escapeStr(
+      repo
+    )} is:pr is:closed label:${JSON.stringify(stuckLabel)}`
 
-    if (
-      data.stuckPRs.totalCount === 0 &&
-      data.previouslyStuckPRs.totalCount === 0
-    ) {
+    debug(`Using stuck PRs search query:\n${stuckPRsQuery}`)
+    debug(`Using previously stuck PRs search query:\n${prevStuckPRsQuery}`)
+
+    const data: InfoQueryResult = await client.graphql(query, {
+      repoOwner,
+      repoName,
+      stuckLabel,
+      stuckPRsQuery,
+      prevStuckPRsQuery
+    })
+
+    if (data.stuckPRs.totalCount === 0 && data.prevStuckPRs.totalCount === 0) {
       debug('No stuck PRs found.')
       return
     }
@@ -88,7 +115,7 @@ const run = async () => {
       )
     }
     {
-      const total = data.previouslyStuckPRs.totalCount
+      const total = data.prevStuckPRs.totalCount
       debug(
         `Found ${total.toLocaleString('en')} previously stuck ${
           total === 1 ? 'PR' : 'PRs'

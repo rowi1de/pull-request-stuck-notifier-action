@@ -7953,50 +7953,57 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 // spell-checker:ignore labelable
-const core = __importStar(__webpack_require__(470));
+const core_1 = __webpack_require__(470);
 exports.updatePullRequests = (context, data) => __awaiter(void 0, void 0, void 0, function* () {
     const { client, config, labelId } = context;
-    const { stuckPRs, previouslyStuckPRs } = data;
-    core.debug('Generating UpdatePRs mutation');
+    const { stuckPRs, prevStuckPRs } = data;
+    core_1.debug('Generating UpdatePRs mutation');
     const mutations = [
-        ...stuckPRs.pullRequests.map((pr, i) => `
-      labelPr_${i}: addLabelsToLabelable(input:{labelableId:"${pr.id}", labelIds:["${labelId}"]}) {
-        labelable {
-          __typename
+        ...stuckPRs.pullRequests.map((pr, i) => {
+            const labelArgs = `input: { labelableId:"${pr.id}", labelIds: $labelIds }`;
+            const commentArgs = `input: { subjectId: "${pr.id}", body: $commentBody }`;
+            return `
+        labelPr_${i}: addLabelsToLabelable(${labelArgs}) {
+          labelable {
+            __typename
+          }
         }
-      }
-      addComment_${i}: addComment(input:{subjectId: "${pr.id}", body: $commentBody}) {
-        subject {
-          id
+        addComment_${i}: addComment(${commentArgs}) {
+          subject {
+            id
+          }
         }
-      }
-    `),
-        ...previouslyStuckPRs.pullRequests.map((pr, i) => `
-      removeLabelPr_${i}: removeLabelsFromLabelable(input:{labelableId:"${pr.id}", labelIds:["${labelId}"]}) {
-        labelable {
-          __typename
+      `;
+        }),
+        ...prevStuckPRs.pullRequests.map((pr, i) => {
+            const nodeArgs = `input:{labelableId:"${pr.id}", labelIds: $labelIds}`;
+            return `
+        removeLabelPr_${i}: removeLabelsFromLabelable(${nodeArgs}) {
+          labelable {
+            __typename
+          }
         }
-      }
-    `)
+      `;
+        })
     ];
-    const queryArgs = [];
+    const queryVarsDef = {
+        labelIds: ['[String!]!', [labelId]]
+    };
     if (stuckPRs.pullRequests.length > 0) {
-        queryArgs.push('$commentBody: String!');
+        queryVarsDef.commentBody = ['String!', config.message];
     }
-    const queryArgsStr = queryArgs.length > 0 ? `(${queryArgs.join(', ')})` : '';
+    const queryArgsStr = Object.entries(queryVarsDef)
+        .map(([key, value]) => `$${key}: ${value[0]}`)
+        .join(', ');
+    // @ts-ignore Object.fromEntries is too new for TS right now
+    const queryVars = Object.fromEntries(Object.entries(queryVarsDef).map(([key, value]) => [key, value[1]]));
     const query = `mutation UpdatePRs${queryArgsStr} {\n${mutations.join('\n')}\n}`;
-    core.debug(`Sending UpdatePRs mutation request:\n${query}`);
-    core.debug('UpdatePRs mutation sent');
-    yield client.graphql(query, { commentBody: config.message });
+    core_1.debug(`Sending UpdatePRs mutation request:\n${query}`);
+    core_1.debug(`Mutation query vars: ${JSON.stringify(queryVars)}`);
+    core_1.debug('UpdatePRs mutation sent');
+    yield client.graphql(query, queryVars);
 });
 
 
@@ -14139,30 +14146,41 @@ const generateCutoffDateString = (cutoff) => {
     const mins = timeNum(d.getUTCMinutes());
     return `${year}-${month}-${day}T${hours}:${mins}:00+00:00`;
 };
+const escapeStr = (str) => JSON.stringify(str).slice(1, -1);
 const run = () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     try {
         const client = new github.GitHub(getInput_1.getInput('repo-token', { required: true }));
-        const { GITHUB_REPOSITORY = '' } = process.env;
-        const [repoOwner, repoName] = GITHUB_REPOSITORY.split('/');
+        const repo = (_a = process.env.GITHUB_REPOSITORY, (_a !== null && _a !== void 0 ? _a : ''));
+        const [repoOwner, repoName] = repo.split('/');
         const config = {
-            cutoff: (_a = getInput_1.getInput('cutoff'), (_a !== null && _a !== void 0 ? _a : '24h')),
-            label: (_b = getInput_1.getInput('label'), (_b !== null && _b !== void 0 ? _b : 'stuck')),
+            cutoff: (_b = getInput_1.getInput('cutoff'), (_b !== null && _b !== void 0 ? _b : '24h')),
+            label: (_c = getInput_1.getInput('label'), (_c !== null && _c !== void 0 ? _c : 'stuck')),
             message: getInput_1.getInput('message', { required: true }),
-            search: (_c = getInput_1.getInput('search-params'), (_c !== null && _c !== void 0 ? _c : getInput_1.getInput('search-query', { required: true })))
+            search: (_d = getInput_1.getInput('search-params'), (_d !== null && _d !== void 0 ? _d : getInput_1.getInput('search-query', { required: true })))
         };
         const stuckLabel = config.label;
         const stuckCutoff = ms_1.default(config.cutoff);
         const stuckSearch = config['search'];
         const createdSince = generateCutoffDateString(stuckCutoff);
+        const queryVarArgs = Object.entries({
+            repoOwner: 'String!',
+            repoName: 'String!',
+            stuckLabel: 'String!',
+            stuckPRsQuery: 'String!',
+            prevStuckPRsQuery: 'String!'
+        })
+            .map(([key, value]) => `$${key}: ${value}`)
+            .join(', ');
+        const prNodeArgs = 'type: ISSUE, first: 100';
         const query = `
-      {
-        repo: repository(owner:"${repoOwner}", name:"${repoName}") {
-          label(name:"${stuckLabel}") {
+      query GetStuckPRs(${queryVarArgs}) {
+        repo: repository(owner: $repoOwner, name: $repoName) {
+          label(name: $stuckLabel) {
             id
           }
         }
-        stuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr ${stuckSearch} is:open created:<=${createdSince} -label:${stuckLabel}", type: ISSUE, first: 100) {
+        stuckPRs: search(query: $stuckPRsQuery, ${prNodeArgs}) {
           totalCount: issueCount
           pullRequests: nodes {
             ... on PullRequest {
@@ -14171,7 +14189,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             }
           }
         }
-        previouslyStuckPRs: search(query: "repo:${GITHUB_REPOSITORY} is:pr is:closed label:${stuckLabel}", type: ISSUE, first: 100) {
+        prevStuckPRs: search(query: $prevStuckPRsQuery, ${prNodeArgs}) {
           totalCount: issueCount
           pullRequests: nodes {
             ... on PullRequest {
@@ -14182,10 +14200,18 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
         }
       }
     `;
-        debug(`Searching for stuck PRs using query:\n${query}`);
-        const data = yield client.graphql(query);
-        if (data.stuckPRs.totalCount === 0 &&
-            data.previouslyStuckPRs.totalCount === 0) {
+        const stuckPRsQuery = `repo:${escapeStr(repo)} is:pr ${escapeStr(stuckSearch)} is:open created:<=${createdSince} -label:${JSON.stringify(stuckLabel)}`;
+        const prevStuckPRsQuery = `repo:${escapeStr(repo)} is:pr is:closed label:${JSON.stringify(stuckLabel)}`;
+        debug(`Using stuck PRs search query:\n${stuckPRsQuery}`);
+        debug(`Using previously stuck PRs search query:\n${prevStuckPRsQuery}`);
+        const data = yield client.graphql(query, {
+            repoOwner,
+            repoName,
+            stuckLabel,
+            stuckPRsQuery,
+            prevStuckPRsQuery
+        });
+        if (data.stuckPRs.totalCount === 0 && data.prevStuckPRs.totalCount === 0) {
             debug('No stuck PRs found.');
             return;
         }
@@ -14194,7 +14220,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
             debug(`Found ${total.toLocaleString('en')} currently stuck ${total === 1 ? 'PR' : 'PRs'}.`);
         }
         {
-            const total = data.previouslyStuckPRs.totalCount;
+            const total = data.prevStuckPRs.totalCount;
             debug(`Found ${total.toLocaleString('en')} previously stuck ${total === 1 ? 'PR' : 'PRs'}.`);
         }
         const context = {

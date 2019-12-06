@@ -22,7 +22,7 @@ export interface InfoQueryResult {
     totalCount: number
     pullRequests: PullRequestInfo[]
   }
-  previouslyStuckPRs: {
+  prevStuckPRs: {
     totalCount: number
     pullRequests: PullRequestInfo[]
   }

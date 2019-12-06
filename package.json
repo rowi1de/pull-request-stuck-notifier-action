@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/loomble/pull-request-stuck-notifier-action/issues"
   },
-  "version": "1.0.0",
+  "version": "1.1.1",
   "type": "commonjs",
   "main": "dist/index.js",
   "files": [
@@ -36,7 +36,7 @@
     "@commitlint/prompt-cli": "^8.2.0",
     "@loomble/cspell-dictionary": "1.0.2",
     "@types/ms": "^0.7.31",
-    "@types/node": "12.12.12",
+    "@types/node": "12.12.14",
     "@zeit/ncc": "^0.20.5",
     "cspell": "4.0.35",
     "husky": "^3.0.9",

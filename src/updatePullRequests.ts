@@ -1,54 +1,70 @@
 // spell-checker:ignore labelable
-import * as core from '@actions/core'
+import { debug } from '@actions/core'
 
-import { Context, PullRequestInfo, InfoQueryResult } from './types'
+import { Context, InfoQueryResult } from './types'
 
 export const updatePullRequests = async (
   context: Context,
   data: InfoQueryResult
 ): Promise<void> => {
   const { client, config, labelId } = context
-  const { stuckPRs, previouslyStuckPRs } = data
+  const { stuckPRs, prevStuckPRs } = data
 
-  core.debug('Generating UpdatePRs mutation')
+  debug('Generating UpdatePRs mutation')
 
   const mutations = [
-    ...stuckPRs.pullRequests.map(
-      (pr, i) => `
-      labelPr_${i}: addLabelsToLabelable(input:{labelableId:"${pr.id}", labelIds:["${labelId}"]}) {
-        labelable {
-          __typename
+    ...stuckPRs.pullRequests.map((pr, i) => {
+      const labelArgs = `input: { labelableId:"${pr.id}", labelIds: $labelIds }`
+      const commentArgs = `input: { subjectId: "${pr.id}", body: $commentBody }`
+
+      return `
+        labelPr_${i}: addLabelsToLabelable(${labelArgs}) {
+          labelable {
+            __typename
+          }
         }
-      }
-      addComment_${i}: addComment(input:{subjectId: "${pr.id}", body: $commentBody}) {
-        subject {
-          id
+        addComment_${i}: addComment(${commentArgs}) {
+          subject {
+            id
+          }
         }
-      }
-    `
-    ),
-    ...previouslyStuckPRs.pullRequests.map(
-      (pr, i) => `
-      removeLabelPr_${i}: removeLabelsFromLabelable(input:{labelableId:"${pr.id}", labelIds:["${labelId}"]}) {
-        labelable {
-          __typename
+      `
+    }),
+    ...prevStuckPRs.pullRequests.map((pr, i) => {
+      const nodeArgs = `input:{labelableId:"${pr.id}", labelIds: $labelIds}`
+      return `
+        removeLabelPr_${i}: removeLabelsFromLabelable(${nodeArgs}) {
+          labelable {
+            __typename
+          }
         }
-      }
-    `
-    )
+      `
+    })
   ]
 
-  const queryArgs: string[] = []
-  if (stuckPRs.pullRequests.length > 0) {
-    queryArgs.push('$commentBody: String!')
+  const queryVarsDef: { [key: string]: [string, unknown] } = {
+    labelIds: ['[String!]!', [labelId]]
   }
 
-  const queryArgsStr = queryArgs.length > 0 ? `(${queryArgs.join(', ')})` : ''
+  if (stuckPRs.pullRequests.length > 0) {
+    queryVarsDef.commentBody = ['String!', config.message]
+  }
+
+  const queryArgsStr = Object.entries(queryVarsDef)
+    .map(([key, value]) => `$${key}: ${value[0]}`)
+    .join(', ')
+
+  // @ts-ignore Object.fromEntries is too new for TS right now
+  const queryVars = Object.fromEntries(
+    Object.entries(queryVarsDef).map(([key, value]) => [key, value[1]])
+  )
+
   const query = `mutation UpdatePRs${queryArgsStr} {\n${mutations.join(
     '\n'
   )}\n}`
-  core.debug(`Sending UpdatePRs mutation request:\n${query}`)
-  core.debug('UpdatePRs mutation sent')
+  debug(`Sending UpdatePRs mutation request:\n${query}`)
+  debug(`Mutation query vars: ${JSON.stringify(queryVars)}`)
+  debug('UpdatePRs mutation sent')
 
-  await client.graphql(query, { commentBody: config.message })
+  await client.graphql(query, queryVars)
 }
