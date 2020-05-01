@@ -6784,9 +6784,12 @@ exports.updatePullRequests = (context, data) => __awaiter(void 0, void 0, void 0
     if (stuckPRs.pullRequests.length > 0) {
         queryVarsDef.commentBody = ['String!', config.message];
     }
+    const queryArgsStr = Object.entries(queryVarsDef)
+        .map(([key, value]) => `$${key}: ${value[0]}`)
+        .join(', ');
     // @ts-ignore Object.fromEntries is too new for TS right now
     const queryVars = Object.fromEntries(Object.entries(queryVarsDef).map(([key, value]) => [key, value[1]]));
-    const query = `mutation UpdatePRs {\n${mutations.join('\n')}\n}`;
+    const query = `mutation UpdatePRs (${queryArgsStr}) {\n${mutations.join('\n')}\n}`;
     core_1.debug(`Sending UpdatePRs mutation request:\n${query}`);
     core_1.debug(`Mutation query vars: ${JSON.stringify(queryVars)}`);
     core_1.debug('UpdatePRs mutation sent');

@@ -50,12 +50,16 @@ export const updatePullRequests = async (
     queryVarsDef.commentBody = ['String!', config.message]
   }
 
+  const queryArgsStr = Object.entries(queryVarsDef)
+    .map(([key, value]) => `$${key}: ${value[0]}`)
+    .join(', ')
+
   // @ts-ignore Object.fromEntries is too new for TS right now
   const queryVars = Object.fromEntries(
     Object.entries(queryVarsDef).map(([key, value]) => [key, value[1]])
   )
 
-  const query = `mutation UpdatePRs {\n${mutations.join(
+  const query = `mutation UpdatePRs (${queryArgsStr}) {\n${mutations.join(
     '\n'
   )}\n}`
   debug(`Sending UpdatePRs mutation request:\n${query}`)
