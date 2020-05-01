@@ -59,7 +59,7 @@ export const updatePullRequests = async (
     Object.entries(queryVarsDef).map(([key, value]) => [key, value[1]])
   )
 
-  const query = `mutation UpdatePRs${queryArgsStr} {\n${mutations.join(
+  const query = `mutation UpdatePRs ${queryArgsStr} {\n${mutations.join(
     '\n'
   )}\n}`
   debug(`Sending UpdatePRs mutation request:\n${query}`)
