@@ -26,23 +26,21 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@actions/core": "^1.2.0",
+    "@actions/core": "^1.2.4",
     "@actions/github": "^1.1.0",
-    "ms": "^2.1.2"
+    "ms": "^2.1.2",
+    "ncc": "^0.3.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.2.0",
     "@commitlint/config-conventional": "^8.2.0",
     "@commitlint/prompt-cli": "^8.2.0",
-    "@loomble/cspell-dictionary": "1.0.2",
     "@types/ms": "^0.7.31",
     "@types/node": "12.12.14",
     "@zeit/ncc": "^0.20.5",
     "cspell": "4.0.35",
     "husky": "^3.0.9",
-    "packlint": "^1.0.3",
     "prettier": "^1.19.1",
-    "prettier-config-slick": "^1.0.0",
     "typescript": ">=3.7.2"
   },
   "keywords": [
